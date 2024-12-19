@@ -143,7 +143,7 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 			return fmt.Errorf("running initial SoH checks: %w", err)
 		}
 
-		fmt.Printf("Error running initial SoH checks: %v\n", err)
+		fmt.Printf("Error running initial SoH checks kat and pj this is your sign!!!!: %v\n", err)
 	}
 
 	return nil
