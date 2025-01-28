@@ -82,7 +82,6 @@ func (SOH) Name() string {
 func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
-		fmt.Printf("Error with configuring!!!!: %v\n", err)
 	}
 
 	if len(this.md.PacketCapture.CaptureHosts) == 0 {
@@ -99,7 +98,6 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 			}
 
 			exp.Spec.Topology().Init(exp.Spec.DefaultBridge())
-			fmt.Printf("Error building Elastic server node kat and pj this is your sign!!!!: %v\n", err)
 		}
 	}
 
@@ -133,7 +131,6 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 			return err
 		}
 
-		fmt.Printf("Error deploying packet capture kat look over here!: %v\n", err)
 	}
 
 	if this.options.DryRun {
