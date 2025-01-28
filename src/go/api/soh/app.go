@@ -98,6 +98,7 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 			}
 
 			exp.Spec.Topology().Init(exp.Spec.DefaultBridge())
+			fmt.Printf("Error building Elastic server node kat and pj this is your sign!!!!: %v\n", err)
 		}
 	}
 
@@ -109,6 +110,7 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 		if err := removeICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
 			return fmt.Errorf("removing ICMP allow rules from topology: %w", err)
 		}
+		fmt.Printf("Error recoming ICMP allow rules from topology kat and pj this is your sign!!!!: %v\n", err)
 	}
 
 	return nil
@@ -130,7 +132,7 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 			return err
 		}
 
-		fmt.Printf("Error deploying packet capture: %v\n", err)
+		fmt.Printf("Error deploying packet capture kat look over here!: %v\n", err)
 	}
 
 	if this.options.DryRun {
