@@ -172,6 +172,8 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	logger.Info("starting SOH checks pj this is your sign!!")
 
+	print("starting SOH checks pj + kat this is your sign?")
+
 	// *** WAIT FOR NODES TO HAVE NETWORKING CONFIGURED *** //
 
 	md := app.GetContextMetadata(ctx)
@@ -256,7 +258,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 				go func(idx int, iface ifaces.NodeNetworkInterface) { // using an anonymous function here so we can break out of the inner select statement
 					defer wg.Done()
 
-					logger.Debug("waiting for DHCP address", "host", host)
+					logger.Debug("waiting for DHCP address HERE", "host", host)
 
 					timer := time.After(this.md.c2Timeout)
 
@@ -307,7 +309,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 			this.gatherNodeIPs(node)
 
 			cidr := fmt.Sprintf("%s/%d", iface.Address(), iface.Mask())
-			logger.Debug("waiting for IP on host to be set", "host", host, "ip", cidr)
+			logger.Debug("waiting for IP on host to be set!", "host", host, "ip", cidr)
 
 			this.isNetworkingConfigured(ctx, wg, ns, node, iface)
 		}
@@ -315,6 +317,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	if this.md.SkipNetworkConfig || !checks["network-config"] {
 		logger.Info("skipping initial network configuration tests per config")
+		logger.Debug("skipping initial network configuration tests per config")
 	}
 
 	cancel := periodicallyNotify(ctx, "waiting for initial network configurations to be validated...", 5*time.Second)
@@ -326,6 +329,8 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	if ctx.Err() != nil {
 		return ctx.Err()
+		print("Error ctx.err!")
+		
 	}
 
 	for _, state := range wg.States {
@@ -338,7 +343,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if err := state.Err; err != nil {
 			logger.Error("[✗] failed to confirm networking", "host", host, "err", err)
-
+			print("[x] faild to confirm networking!")
 			if errors.Is(err, mm.ErrC2ClientNotActive) {
 				delete(this.c2Hosts, host)
 			} else {
@@ -373,6 +378,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if ctx.Err() != nil {
 			return ctx.Err()
+			print("error line 381")
 		}
 
 		errs = errs || err
@@ -384,6 +390,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if ctx.Err() != nil {
 			return ctx.Err()
+			logger.debug("error line 393")
 		}
 
 		errs = errs || err
@@ -395,6 +402,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if ctx.Err() != nil {
 			return ctx.Err()
+			print("error line 405")
 		}
 
 		errs = errs || err
