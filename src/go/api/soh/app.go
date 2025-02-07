@@ -117,13 +117,13 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 
 func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
 	return nil
-	print("PreStart error KAT line 120")
+	fmt.Printf("PreStart error KAT line 120: %v\n", err)
 }
 
 func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
-		print("PostStart error KAT line 126")
+		fmt.Printf("PostStart error KAT line 126: %v\n", err)
 	}
 
 	this.apps = exp.Spec.Scenario().Apps()
