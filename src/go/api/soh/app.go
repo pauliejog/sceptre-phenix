@@ -109,7 +109,7 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 		if err := removeICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
 			return fmt.Errorf("removing ICMP allow rules from topology: %w", err)
 		}
-		fmt.Printf("Error recoming ICMP allow rules from topology kat and pj this is your sign!!!!: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
 	}
 
 	return nil
@@ -117,11 +117,13 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 
 func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
 	return nil
+	print("PreStart error KAT line 120")
 }
 
 func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
+		print("PostStart error KAT line 126")
 	}
 
 	this.apps = exp.Spec.Scenario().Apps()
