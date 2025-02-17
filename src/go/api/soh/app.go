@@ -82,6 +82,7 @@ func (SOH) Name() string {
 func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
+		return fmt.Errorf("error configuring line 82-85: %w", err)
 	}
 
 	if len(this.md.PacketCapture.CaptureHosts) == 0 {
@@ -103,11 +104,11 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 
 	if this.md.InjectICMPAllow {
 		if err := injectICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
-			return fmt.Errorf("injecting ICMP allow rules into topology: %w", err)
+			return fmt.Errorf("error! line 105 injecting ICMP allow rules into topology: %w", err)
 		}
 	} else {
 		if err := removeICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
-			return fmt.Errorf("removing ICMP allow rules from topology: %w", err)
+			return fmt.Errorf("error! line 110 removing ICMP allow rules from topology: %w", err)
 		}
 		fmt.Printf("Error: %v\n", err)
 	}
@@ -131,6 +132,7 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.deployCapture(exp, this.options.DryRun); err != nil {
 		if this.md.ExitOnError {
 			return err
+			return fmt.Errorf("error line 132: %w", err)
 		}
 
 	}
@@ -155,7 +157,7 @@ func (this *SOH) Running(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
 	}
-
+		fmt.Printf("Error line 156: %v\n", err)
 	this.apps = exp.Spec.Scenario().Apps()
 
 	return this.runChecks(ctx, exp)
@@ -163,7 +165,7 @@ func (this *SOH) Running(ctx context.Context, exp *types.Experiment) error {
 
 func (SOH) Cleanup(ctx context.Context, exp *types.Experiment) error {
 	if err := mm.ClearC2Responses(mm.C2NS(exp.Spec.ExperimentName())); err != nil {
-		return fmt.Errorf("deleting minimega C2 responses: %w", err)
+		return fmt.Errorf("LINE 168 error deleting minimega C2 responses: %w", err)
 	}
 
 	return nil
@@ -174,7 +176,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	logger.Info("starting SOH checks pj this is your sign!!")
 
-	print("starting SOH checks pj + kat this is your sign?")
+	fmt.Printf("starting SOH checks pj + kat this is your sign?: %v\n", err) 
 
 	// *** WAIT FOR NODES TO HAVE NETWORKING CONFIGURED *** //
 
@@ -269,13 +271,13 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 						case <-ctx.Done():
 							return
 						case <-timer:
-							wg.AddError(fmt.Errorf("time expired waiting for DHCP details from minimega"), map[string]interface{}{"host": host})
+							wg.AddError(fmt.Errorf("LINE 274 time expired waiting for DHCP details from minimega"), map[string]interface{}{"host": host})
 							return
 						default:
 							vms := mm.GetVMInfo(mm.NS(ns), mm.VMName(host))
 
 							if vms == nil {
-								wg.AddError(fmt.Errorf("unable to get DHCP details from minimega"), map[string]interface{}{"host": host})
+								wg.AddError(fmt.Errorf("LINE 279 unable to get DHCP details from minimega"), map[string]interface{}{"host": host})
 								return
 							} else {
 								addrs := vms[0].IPv4
@@ -331,7 +333,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	if ctx.Err() != nil {
 		return ctx.Err()
-		print("Error ctx.err!")
+		fmt.Printf("Error ctx.err! line 336: %v\n", err)
 		
 	}
 
@@ -345,7 +347,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if err := state.Err; err != nil {
 			logger.Error("[✗] failed to confirm networking", "host", host, "err", err)
-			print("[x] faild to confirm networking!")
+			fmt.Printf("[x] faild to confirm networking! line 348: %v\n", err)
 			if errors.Is(err, mm.ErrC2ClientNotActive) {
 				delete(this.c2Hosts, host)
 			} else {
@@ -380,7 +382,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if ctx.Err() != nil {
 			return ctx.Err()
-			print("error line 381")
+			fmt.Printf("error line 383: %v\n", err)
 		}
 
 		errs = errs || err
