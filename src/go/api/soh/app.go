@@ -110,7 +110,7 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 		if err := removeICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
 			return fmt.Errorf("error! line 110 removing ICMP allow rules from topology: %w", err)
 		}
-		fmt.Printf("Error: %v\n", err)
+		logger.Info("Error: %v\n", err)
 	}
 
 	return nil
@@ -118,13 +118,13 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 
 func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
 	return nil
-	fmt.Printf("PreStart error KAT line 120: %v\n", err)
+	logger.Info("PreStart error KAT line 120: %v\n", err)
 }
 
 func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
-		fmt.Printf("PostStart error line 126: %v\n", err)
+		logger.Info("PostStart error line 126: %v\n", err)
 	}
 
 	this.apps = exp.Spec.Scenario().Apps()
@@ -133,21 +133,21 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 		if this.md.ExitOnError {
 			return err
 		}
-		fmt.Printf("Error line 132!!!!: %v\n", err)
+		logger.Info("Error line 132!!!!: %v\n", err)
 	}
 
 	if this.options.DryRun {
-		fmt.Printf("skipping SoH checks since this is a dry run")
+		logger.Info("skipping SoH checks since this is a dry run")
 		return nil
 	}
-		fmt.Printf("Error skipping SoH checks since this is a dry run!!!!: %v\n", err)
+		logger.Info("Error skipping SoH checks since this is a dry run!!!!: %v\n", err)
 	
 	if err := this.runChecks(ctx, exp); err != nil {
 		if this.md.ExitOnError {
 			return fmt.Errorf("running initial SoH checks: %w", err)
 		}
 
-		fmt.Printf("Error running initial SoH checks kat and pj this is your sign!!!!: %v\n", err)
+		logger.Info("Error running initial SoH checks kat and pj this is your sign!!!!: %v\n", err)
 	}
 
 	return nil
@@ -157,7 +157,7 @@ func (this *SOH) Running(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
 	}
-		fmt.Printf("Error line 156: %v\n", err)
+		logger.Info("Error line 156: %v\n", err)
 	this.apps = exp.Spec.Scenario().Apps()
 
 	return this.runChecks(ctx, exp)
@@ -176,7 +176,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	logger.Info("starting SOH checks pj this is your sign!!")
 
-	fmt.Printf("starting SOH checks pj + kat this is your sign?: %v\n", err) 
+	logger.Info("starting SOH checks pj + kat this is your sign?: %v\n", err) 
 
 	// *** WAIT FOR NODES TO HAVE NETWORKING CONFIGURED *** //
 
@@ -333,7 +333,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	if ctx.Err() != nil {
 		return ctx.Err()
-		fmt.Printf("Error ctx.err! line 336: %v\n", err)
+		logger.Info("Error ctx.err! line 336: %v\n", err)
 		
 	}
 
@@ -347,7 +347,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if err := state.Err; err != nil {
 			logger.Error("[✗] failed to confirm networking", "host", host, "err", err)
-			fmt.Printf("[x] faild to confirm networking! line 348: %v\n", err)
+			logger.Info("[x] faild to confirm networking! line 348: %v\n", err)
 			if errors.Is(err, mm.ErrC2ClientNotActive) {
 				delete(this.c2Hosts, host)
 			} else {
@@ -382,7 +382,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if ctx.Err() != nil {
 			return ctx.Err()
-			fmt.Printf("error line 383: %v\n", err)
+			logger.Info("error line 383: %v\n", err)
 		}
 
 		errs = errs || err
@@ -478,7 +478,7 @@ func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
 				continue
 			}
 
-			fmt.Printf("error executing command 'query-flows.sh': %v\n", err)
+			logger.Info("error executing command 'query-flows.sh': %v\n", err)
 			return
 		}
 
@@ -491,14 +491,14 @@ func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
 
 	resp, err := mm.WaitForC2Response(opts...)
 	if err != nil {
-		fmt.Printf("error getting response for command 'query-flows.sh': %v\n", err)
+		logger.Info("error getting response for command 'query-flows.sh': %v\n", err)
 		return
 	}
 
 	var result elastic.SearchResult
 
 	if err := json.Unmarshal([]byte(resp), &result); err != nil {
-		fmt.Printf("error parsing Elasticsearch results: %v\n", err)
+		logger.Info("error parsing Elasticsearch results: %v\n", err)
 		return
 	}
 
@@ -518,7 +518,7 @@ func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
 		var fields flowsStruct
 
 		if err := json.Unmarshal(hit.Source, &fields); err != nil {
-			fmt.Printf("unable to parse hit source: %v\n", err)
+			logger.Info("unable to parse hit source: %v\n", err)
 			return
 		}
 
