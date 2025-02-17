@@ -81,8 +81,9 @@ func (SOH) Name() string {
 
 func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
+		fmt.Errorf("error configuring line 82-85: %w", err)
 		return err
-		return fmt.Errorf("error configuring line 82-85: %w", err)
+		
 	}
 
 	if len(this.md.PacketCapture.CaptureHosts) == 0 {
@@ -117,30 +118,33 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 }
 
 func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
-	return nil
 	logger.Info("PreStart error KAT line 120: %v\n", err)
+	return nil
+	
 }
 
 func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
-		return err
 		logger.Info("PostStart error line 126: %v\n", err)
+		return err
+		
 	}
 
 	this.apps = exp.Spec.Scenario().Apps()
 
 	if err := this.deployCapture(exp, this.options.DryRun); err != nil {
 		if this.md.ExitOnError {
+			logger.Info("Error line 132!!!!: %v\n", err)
 			return err
 		}
-		logger.Info("Error line 132!!!!: %v\n", err)
+		
 	}
 
 	if this.options.DryRun {
 		logger.Info("skipping SoH checks since this is a dry run")
 		return nil
 	}
-		logger.Info("Error skipping SoH checks since this is a dry run!!!!: %v\n", err)
+	logger.Info("Error skipping SoH checks since this is a dry run!!!!: %v\n", err)
 	
 	if err := this.runChecks(ctx, exp); err != nil {
 		if this.md.ExitOnError {
@@ -157,7 +161,7 @@ func (this *SOH) Running(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
 	}
-		logger.Info("Error line 156: %v\n", err)
+	logger.Info("Error line 156: %v\n", err)
 	this.apps = exp.Spec.Scenario().Apps()
 
 	return this.runChecks(ctx, exp)
@@ -347,7 +351,6 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if err := state.Err; err != nil {
 			logger.Error("[✗] failed to confirm networking", "host", host, "err", err)
-			logger.Info("[x] faild to confirm networking! line 348: %v\n", err)
 			if errors.Is(err, mm.ErrC2ClientNotActive) {
 				delete(this.c2Hosts, host)
 			} else {
@@ -381,8 +384,8 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 		this.writeResults(exp)
 
 		if ctx.Err() != nil {
-			return ctx.Err()
 			logger.Info("error line 383: %v\n", err)
+			return ctx.Err()
 		}
 
 		errs = errs || err
@@ -393,8 +396,10 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 		this.writeResults(exp)
 
 		if ctx.Err() != nil {
+			logger.Info
+			("error line 393")
 			return ctx.Err()
-			logger.debug("error line 393")
+			
 		}
 
 		errs = errs || err
@@ -406,7 +411,6 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 		if ctx.Err() != nil {
 			return ctx.Err()
-			print("error line 405")
 		}
 
 		errs = errs || err
