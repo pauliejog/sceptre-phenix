@@ -124,7 +124,7 @@ func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
 func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
-		fmt.Printf("PostStart error KAT line 126: %v\n", err)
+		fmt.Printf("PostStart error line 126: %v\n", err)
 	}
 
 	this.apps = exp.Spec.Scenario().Apps()
@@ -132,16 +132,16 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 	if err := this.deployCapture(exp, this.options.DryRun); err != nil {
 		if this.md.ExitOnError {
 			return err
-			return fmt.Errorf("error line 132: %w", err)
 		}
-
+		fmt.Printf("Error line 132!!!!: %v\n", err)
 	}
 
 	if this.options.DryRun {
 		fmt.Printf("skipping SoH checks since this is a dry run")
 		return nil
 	}
-
+		fmt.Printf("Error skipping SoH checks since this is a dry run!!!!: %v\n", err)
+	
 	if err := this.runChecks(ctx, exp); err != nil {
 		if this.md.ExitOnError {
 			return fmt.Errorf("running initial SoH checks: %w", err)
