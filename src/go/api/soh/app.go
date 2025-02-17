@@ -176,7 +176,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	logger.Info("starting SOH checks pj this is your sign!!")
 
-	logger.Info("starting SOH checks pj + kat this is your sign?: %v\n", err) 
+	// *** (logger.Info("starting SOH checks pj + kat this is your sign?: %v\n", err) *** //
 
 	// *** WAIT FOR NODES TO HAVE NETWORKING CONFIGURED *** //
 
