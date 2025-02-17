@@ -118,7 +118,7 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 }
 
 func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
-	logger.Info("PreStart error KAT line 120: %v\n", err)
+	logger.Info("PreStart error line 120")
 	return nil
 	
 }
@@ -144,7 +144,7 @@ func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
 		logger.Info("skipping SoH checks since this is a dry run")
 		return nil
 	}
-	logger.Info("Error skipping SoH checks since this is a dry run!!!!: %v\n", err)
+	logger.Info("Error skipping SoH checks since this is a dry run!!!!")
 	
 	if err := this.runChecks(ctx, exp); err != nil {
 		if this.md.ExitOnError {
