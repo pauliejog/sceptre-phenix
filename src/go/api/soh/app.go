@@ -112,7 +112,6 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 			logger.Info("Error line 110")
 			return fmt.Errorf("error! line 110 removing ICMP allow rules from topology: %w", err)
 		}
-		logger.Info("Error: %v\n", err)
 	}
 
 	return nil
