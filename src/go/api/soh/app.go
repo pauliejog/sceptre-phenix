@@ -109,6 +109,7 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 		}
 	} else {
 		if err := removeICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
+			logger.Info("Error line 110")
 			return fmt.Errorf("error! line 110 removing ICMP allow rules from topology: %w", err)
 		}
 		logger.Info("Error: %v\n", err)
