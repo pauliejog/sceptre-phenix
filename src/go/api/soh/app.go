@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -14,7 +16,6 @@ import (
 	"phenix/types"
 	ifaces "phenix/types/interfaces"
 	"phenix/util/mm"
-	"phenix/util/plog"
 
 	"github.com/activeshadow/structs"
 	"github.com/olivere/elastic/v7"
@@ -79,11 +80,22 @@ func (SOH) Name() string {
 	return "soh"
 }
 
+func ConfigureLogger() *log.Logger {
+	file, err := os.OpenFile("/var/log/phenix/soh.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		panic("can't make soh log file")
+	}
+
+	logger := log.New(file, "LOG: ", log.Ldate|log.Ltime|log.Lshortfile)
+	return logger
+}
+
 func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
+	logger := ConfigureLogger()
 	if err := this.decodeMetadata(exp); err != nil {
 		fmt.Errorf("error configuring line 82-85: %w", err)
 		return err
-		
+
 	}
 
 	if len(this.md.PacketCapture.CaptureHosts) == 0 {
@@ -109,49 +121,53 @@ func (this *SOH) Configure(ctx context.Context, exp *types.Experiment) error {
 		}
 	} else {
 		if err := removeICMPAllowRules(exp.Spec.Topology().Nodes()); err != nil {
-			logger.Info("Error line 110")
+			logger.Print("Error line 110")
 			return fmt.Errorf("error! line 110 removing ICMP allow rules from topology: %w", err)
 		}
+		// logger.Print("Error: %v\n", err)
 	}
 
 	return nil
 }
 
 func (this *SOH) PreStart(ctx context.Context, exp *types.Experiment) error {
-	logger.Info("PreStart error line 120")
+	logger := ConfigureLogger()
+
+	logger.Print("PreStart error line 120")
 	return nil
-	
+
 }
 
 func (this *SOH) PostStart(ctx context.Context, exp *types.Experiment) error {
+	logger := ConfigureLogger()
 	if err := this.decodeMetadata(exp); err != nil {
-		logger.Info("PostStart error line 126: %v\n", err)
+		logger.Print("PostStart error line 126: %v\n", err)
 		return err
-		
+
 	}
 
 	this.apps = exp.Spec.Scenario().Apps()
 
 	if err := this.deployCapture(exp, this.options.DryRun); err != nil {
 		if this.md.ExitOnError {
-			logger.Info("Error line 132!!!!: %v\n", err)
+			logger.Print("Error line 132!!!!: %v\n", err)
 			return err
 		}
-		
+
 	}
 
 	if this.options.DryRun {
-		logger.Info("skipping SoH checks since this is a dry run")
+		logger.Print("skipping SoH checks since this is a dry run")
 		return nil
 	}
-	logger.Info("Error skipping SoH checks since this is a dry run!!!!")
-	
+	logger.Print("Error skipping SoH checks since this is a dry run!!!!")
+
 	if err := this.runChecks(ctx, exp); err != nil {
 		if this.md.ExitOnError {
 			return fmt.Errorf("running initial SoH checks: %w", err)
 		}
 
-		logger.Info("Error running initial SoH checks kat and pj this is your sign!!!!: %v\n", err)
+		logger.Print("Error running initial SoH checks kat and pj this is your sign!!!!: %v\n", err)
 	}
 
 	return nil
@@ -161,7 +177,7 @@ func (this *SOH) Running(ctx context.Context, exp *types.Experiment) error {
 	if err := this.decodeMetadata(exp); err != nil {
 		return err
 	}
-	logger.Info("Error line 156: %v\n", err)
+	// logger.Print("Error line 156: %v\n", err)
 	this.apps = exp.Spec.Scenario().Apps()
 
 	return this.runChecks(ctx, exp)
@@ -176,11 +192,11 @@ func (SOH) Cleanup(ctx context.Context, exp *types.Experiment) error {
 }
 
 func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
-	logger := plog.LoggerFromContext(ctx)
+	logger := ConfigureLogger()
 
-	logger.Info("starting SOH checks pj this is your sign!!")
+	logger.Print("starting SOH checks pj this is your sign!!")
 
-	// *** (logger.Info("starting SOH checks pj + kat this is your sign?: %v\n", err) *** //
+	// *** (logger.Print("starting SOH checks pj + kat this is your sign?: %v\n", err) *** //
 
 	// *** WAIT FOR NODES TO HAVE NETWORKING CONFIGURED *** //
 
@@ -237,7 +253,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 		this.nodes[host] = node
 
 		if skip(node, this.md.SkipHosts) {
-			logger.Debug("skipping host per config", "host", host)
+			logger.Print("skipping host per config", "host", host)
 			continue
 		}
 
@@ -266,7 +282,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 				go func(idx int, iface ifaces.NodeNetworkInterface) { // using an anonymous function here so we can break out of the inner select statement
 					defer wg.Done()
 
-					logger.Debug("waiting for DHCP address HERE", "host", host)
+					logger.Print("waiting for DHCP address HERE", "host", host)
 
 					timer := time.After(this.md.c2Timeout)
 
@@ -317,15 +333,15 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 			this.gatherNodeIPs(node)
 
 			cidr := fmt.Sprintf("%s/%d", iface.Address(), iface.Mask())
-			logger.Debug("waiting for IP on host to be set!", "host", host, "ip", cidr)
+			logger.Print("waiting for IP on host to be set!", "host", host, "ip", cidr)
 
 			this.isNetworkingConfigured(ctx, wg, ns, node, iface)
 		}
 	}
 
 	if this.md.SkipNetworkConfig || !checks["network-config"] {
-		logger.Info("skipping initial network configuration tests per config")
-		logger.Debug("skipping initial network configuration tests per config")
+		logger.Print("skipping initial network configuration tests per config")
+		logger.Print("skipping initial network configuration tests per config")
 	}
 
 	cancel := periodicallyNotify(ctx, "waiting for initial network configurations to be validated...", 5*time.Second)
@@ -337,8 +353,8 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 
 	if ctx.Err() != nil {
 		return ctx.Err()
-		logger.Info("Error ctx.err! line 336: %v\n", err)
-		
+		// logger.Print("Error ctx.err! line 336: %v\n", err)
+
 	}
 
 	for _, state := range wg.States {
@@ -350,7 +366,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 		}
 
 		if err := state.Err; err != nil {
-			logger.Error("[✗] failed to confirm networking", "host", host, "err", err)
+			logger.Fatal("[✗] failed to confirm networking", "host", host, "err", err)
 			if errors.Is(err, mm.ErrC2ClientNotActive) {
 				delete(this.c2Hosts, host)
 			} else {
@@ -384,7 +400,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 		this.writeResults(exp)
 
 		if ctx.Err() != nil {
-			logger.Info("error line 383: %v\n", err)
+			logger.Print("error line 383: %v\n", err)
 			return ctx.Err()
 		}
 
@@ -396,10 +412,9 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 		this.writeResults(exp)
 
 		if ctx.Err() != nil {
-			logger.Info
-			("error line 393")
+			logger.Print("error line 393")
 			return ctx.Err()
-			
+
 		}
 
 		errs = errs || err
@@ -457,6 +472,7 @@ func (this *SOH) runChecks(ctx context.Context, exp *types.Experiment) error {
 }
 
 func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
+	logger := ConfigureLogger()
 	node := exp.Spec.Topology().FindNodesWithLabels("soh-elastic-server")
 
 	if len(node) == 0 {
@@ -482,7 +498,7 @@ func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
 				continue
 			}
 
-			logger.Info("error executing command 'query-flows.sh': %v\n", err)
+			logger.Print("error executing command 'query-flows.sh': %v\n", err)
 			return
 		}
 
@@ -495,14 +511,14 @@ func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
 
 	resp, err := mm.WaitForC2Response(opts...)
 	if err != nil {
-		logger.Info("error getting response for command 'query-flows.sh': %v\n", err)
+		logger.Print("error getting response for command 'query-flows.sh': %v\n", err)
 		return
 	}
 
 	var result elastic.SearchResult
 
 	if err := json.Unmarshal([]byte(resp), &result); err != nil {
-		logger.Info("error parsing Elasticsearch results: %v\n", err)
+		logger.Print("error parsing Elasticsearch results: %v\n", err)
 		return
 	}
 
@@ -522,7 +538,7 @@ func (this *SOH) getFlows(ctx context.Context, exp *types.Experiment) {
 		var fields flowsStruct
 
 		if err := json.Unmarshal(hit.Source, &fields); err != nil {
-			logger.Info("unable to parse hit source: %v\n", err)
+			logger.Print("unable to parse hit source: %v\n", err)
 			return
 		}
 
