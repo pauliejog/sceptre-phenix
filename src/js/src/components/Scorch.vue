@@ -29,7 +29,7 @@
       <template slot="empty">
         <section class="section">
           <div class="content has-text-white has-text-centered">
-            Your search turned up empty!
+            Hello, PJ!
           </div>
         </section>
       </template>
