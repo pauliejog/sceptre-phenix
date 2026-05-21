@@ -545,7 +545,7 @@
               <b-icon icon="heartbeat"></b-icon>
             </router-link>
             &nbsp;
-            <router-link v-if="roleAllowed('experiments', 'get', experiment.name)" class="button is-light" :to="{ name: 'scorch', params: { id: this.$route.params.id }}">
+            <router-link v-if="roleAllowed('experiments', 'get', experiment.name)" class="button is-light" :to="{ name: 'scorchruns', params: { id: this.$route.params.id }}">
               <b-icon icon="fire"></b-icon>
             </router-link>
           </p>

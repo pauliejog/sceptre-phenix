@@ -15,7 +15,7 @@ are only available to Global Administrator or Global Viewer.
     </template>
     <template #start>
       <b-navbar-item v-if="auth && roleAllowed('experiments', 'list')" tag="router-link"
-        :to="{ name: 'experiments' }">Experiments</b-navbar-item>
+        :to="{ name: 'experiments' }">PJsExperiments</b-navbar-item>
       <b-navbar-item v-if="auth && roleAllowed('configs', 'list')" tag="router-link"
         :to="{ name: 'configs' }">Configs</b-navbar-item>
       <b-navbar-item v-if="auth && roleAllowed('disks', 'list')" tag="router-link"
