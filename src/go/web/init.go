@@ -26,5 +26,9 @@ func Init() error {
 		return fmt.Errorf("saving updated global-admin role: %w", err)
 	}
 
+	if err := rbac.EnsureExperimentFilesCreatePermission(); err != nil {
+		return fmt.Errorf("ensuring experiment file upload permissions: %w", err)
+	}
+
 	return nil
 }

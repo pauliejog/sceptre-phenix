@@ -34,6 +34,10 @@ spec:
     - create
     - update
   - resources:
+    - "experiments/files"
+    verbs:
+    - create
+  - resources:
     - hosts
     resourceNames:
     - "*"

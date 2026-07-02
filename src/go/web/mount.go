@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"phenix/api/experiment"
 	"phenix/util/file"
 	"phenix/util/mm"
 	"phenix/util/plog"
@@ -553,4 +554,150 @@ func UploadMountFile(w http.ResponseWriter, r *http.Request) {
 	defer func() { _ = localFile.Close() }()
 
 	_, _ = io.Copy(localFile, clientFile)
+}
+
+// CopyExperimentFileToMount copies a same-experiment file into a mounted VM directory.
+func CopyExperimentFileToMount(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	basePath := mm.GetLocalMountPath(vars["exp"], vars["name"])
+
+	role, _ := r.Context().Value(middleware.ContextKeyRole).(rbac.Role)
+	if !role.Allowed("vms/mount", "patch", fmt.Sprintf("%s/%s", vars["exp"], vars["name"])) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+
+		return
+	}
+
+	if !role.Allowed("experiments/files", "get", vars["exp"]) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+
+		return
+	}
+
+	activeMountsMu.RLock()
+	mountInfo, exists := activeMounts[basePath]
+	activeMountsMu.RUnlock()
+
+	if !exists {
+		http.Error(w, "No existing mount for "+basePath, http.StatusBadRequest)
+
+		return
+	}
+
+	mountInfo.lock.RLock()
+	defer mountInfo.lock.RUnlock()
+
+	query := r.URL.Query()
+	destDir := filepath.Join(basePath, query.Get("path"))
+	if err := validatePathWithin(destDir, basePath); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	info, err := os.Stat(destDir)
+	if err != nil {
+		http.Error(w, "Error getting path "+destDir+": "+err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	if !info.IsDir() {
+		http.Error(w, "Expected directory not file: "+destDir, http.StatusBadRequest)
+
+		return
+	}
+
+	exp, err := experiment.Get(vars["exp"])
+	if err != nil {
+		http.Error(w, "Error getting experiment: "+err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	source, err := getExperimentFilePath(vars["exp"], query.Get("source"), exp.FilesDir())
+	if err != nil {
+		http.Error(w, "Error getting source file: "+err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	sourceFile, err := os.Open(source) //nolint:gosec // source validated against experiment file list
+	if err != nil {
+		http.Error(w, "Error opening source file: "+err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+	defer func() { _ = sourceFile.Close() }()
+
+	destName := filepath.Base(source)
+	destPath := filepath.Join(destDir, destName)
+	if err := validatePathWithin(destPath, destDir); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	destFile, err := os.OpenFile(destPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600) //nolint:gosec // destination validated against mount path
+	if err != nil {
+		http.Error(w, "Error creating destination file: "+err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+	defer func() { _ = destFile.Close() }()
+
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		http.Error(w, "Error copying file: "+err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+}
+
+// getExperimentFilePath returns a source path only when it matches a known experiment file.
+func getExperimentFilePath(expName, source, filesDir string) (string, error) {
+	if source == "" {
+		return "", fmt.Errorf("no source file provided")
+	}
+
+	files, err := experiment.Files(expName, "")
+	if err != nil {
+		return "", fmt.Errorf("listing experiment files: %w", err)
+	}
+
+	for _, f := range files {
+		if source != f.Path {
+			continue
+		}
+
+		headnode, _ := os.Hostname()
+		_ = file.CopyFile(fmt.Sprintf("/%s/files/%s", expName, f.Path), headnode, nil)
+
+		path := filepath.Join(filesDir, f.Path)
+		info, err := os.Stat(path)
+		if err != nil {
+			return "", err
+		}
+
+		if info.IsDir() {
+			return "", fmt.Errorf("source is a directory")
+		}
+
+		return path, nil
+	}
+
+	return "", fmt.Errorf("file not found")
+}
+
+// validatePathWithin returns an error when path escapes base.
+func validatePathWithin(path, base string) error {
+	rel, err := filepath.Rel(base, path)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+
+	if rel == ".." || strings.HasPrefix(rel, "../") {
+		return fmt.Errorf("path is not within base")
+	}
+
+	return nil
 }
