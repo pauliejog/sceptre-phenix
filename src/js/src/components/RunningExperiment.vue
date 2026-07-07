@@ -143,7 +143,7 @@
     </div>
   </b-modal>
   <b-modal :active.sync="portForwardModal.active" :on-cancel="resetPortForwardModal" has-modal-card>
-    <div class="modal-card" style="width:30em">
+    <div class="modal-card port-forward-modal" style="width:30em">
       <header class="modal-card-head">
         <p class="modal-card-title">Create New Port Forward</p>
       </header>
@@ -3474,6 +3474,9 @@ div.autocomplete >>> a.dropdown-item {
 
   >>> .label {
     color: white;
+  }
+  .port-forward-modal >>> .label {
+    color: #363636;
   }
   >>> .field-label {
     flex-grow: 3;

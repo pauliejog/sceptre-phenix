@@ -172,7 +172,7 @@ func Auth(jwtKey, proxyAuthHeader string) mux.MiddlewareFunc {
 
 			ctx := r.Context()
 
-			userToken := ctx.Value(ContextKeyUser)
+			userToken := userTokenFromContext(ctx)
 			if userToken == nil {
 				plog.Warn(
 					plog.TypeSecurity,
@@ -286,4 +286,13 @@ func Auth(jwtKey, proxyAuthHeader string) mux.MiddlewareFunc {
 
 	// First validate the token itself, then ensure the user in the token is valid.
 	return func(h http.Handler) http.Handler { return tokenMiddleware.Handler(userMiddleware(h)) }
+}
+
+// userTokenFromContext returns the parsed JWT from phenix or JWT middleware context keys.
+func userTokenFromContext(ctx context.Context) any {
+	if token := ctx.Value(ContextKeyUser); token != nil {
+		return token
+	}
+
+	return ctx.Value("user")
 }

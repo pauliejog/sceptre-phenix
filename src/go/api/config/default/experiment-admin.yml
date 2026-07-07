@@ -29,6 +29,10 @@ spec:
     verbs:
     - list
   - resources:
+    - "experiments/files"
+    verbs:
+    - create
+  - resources:
     - hosts
     resourceNames:
     - "*"

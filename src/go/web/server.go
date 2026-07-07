@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -94,6 +95,14 @@ func ConfigureUsers(users []string) error {
 //nolint:funlen,maintidx // server startup
 func Start(opts ...ServerOption) error {
 	o = newServerOptions(opts...)
+	fileServerEndpoint, err := normalizeFileServerEndpoint(o.fileServerEndpoint)
+	if err != nil {
+		return fmt.Errorf("invalid ui.file-server-endpoint: %w", err)
+	}
+
+	if fileServerEndpoint != "" {
+		o.features["file-server"] = true
+	}
 
 	_ = ConfigureUsers(o.users)
 
@@ -317,6 +326,8 @@ func Start(opts ...ServerOption) error {
 		api.HandleFunc("/experiments/{exp}/vms/{name}/files/upload", UploadMountFile).
 			Methods("PUT", "OPTIONS").
 			Queries("path", "{path}")
+		api.HandleFunc("/experiments/{exp}/vms/{name}/files/copy", CopyExperimentFileToMount).
+			Methods("POST", "OPTIONS")
 	}
 
 	api.HandleFunc("/disks", GetDisks).Methods("GET", "OPTIONS")
@@ -415,6 +426,10 @@ func Start(opts ...ServerOption) error {
 
 	plog.Info(plog.TypeSystem, "using base path", "path", o.basePath)
 	plog.Info(plog.TypeSystem, "using JWT lifetime", "lifetime", o.jwtLifetime)
+
+	if fileServerEndpoint != "" {
+		go StartFileServer(fileServerEndpoint, o.jwtKey, o.proxyAuthHeader)
+	}
 
 	if common.UnixSocket != "" {
 		var (

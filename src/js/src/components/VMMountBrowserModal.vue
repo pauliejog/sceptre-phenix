@@ -35,12 +35,20 @@
                   :disabled="currentUploadProgress !== null">
             <span class="file-cta">
                 <b-icon class="file-icon" icon="upload"></b-icon>
-                <span class="file-label" :disabled="currentUploadProgress !== null">Upload File</span>
+                <span class="file-label" :disabled="currentUploadProgress !== null">Upload Local File</span>
             </span>
         </b-upload>
       </b-field>
+      <b-field v-show="fileServerEnabled && roleAllowed('vms/mount', 'patch', targetExp + '/' + targetVm) && roleAllowed('experiments/files', 'get', targetExp)" class="ml-3" style="margin-bottom: 0;">
+        <b-select v-model="selectedExperimentFile" :disabled="copyingExperimentFile || currentUploadProgress !== null || experimentFiles.length === 0" placeholder="Copy experiment file" @input="copyExperimentFile" expanded>
+          <option v-for="file in experimentFiles" :key="file.path" :value="file.path">{{ file.path }}</option>
+        </b-select>
+      </b-field>
       <b-progress class="progress mx-3" v-show="currentUploadProgress !== null" :value="currentUploadProgress" :max="100" show-value>
         {{this.currentUploadFileName}} : {{parseFloat(this.currentUploadProgress).toFixed(2)}}%
+      </b-progress>
+      <b-progress class="progress mx-3" v-show="copyingExperimentFile" indeterminate>
+        Copying {{this.currentCopyFileName}}
       </b-progress>
     </footer>
   </div>
@@ -48,6 +56,8 @@
 </template>
 
 <script>
+
+import { mapState } from 'vuex'
 
 export default {
   props: [
@@ -62,7 +72,11 @@ export default {
       filesLoading: false,
       currentPath: "/",
       currentUploadProgress: null,
-      currentUploadFileName: ""
+      currentUploadFileName: "",
+      experimentFiles: [],
+      selectedExperimentFile: null,
+      copyingExperimentFile: false,
+      currentCopyFileName: ""
     }
   },
 
@@ -72,8 +86,11 @@ export default {
 
   beforeMount() {
     this.$http.post(`experiments/${this.targetExp}/vms/${this.targetVm}/mount`).then(_ => {
-     this.getFiles();
-      
+      this.getFiles();
+      if (this.fileServerEnabled) {
+        this.getExperimentFiles();
+      }
+
     }, err => {
       this.errorDialog('Error mounting vm ' + this.targetVm + ": " + err.body);
       this.$parent.close();
@@ -94,7 +111,15 @@ export default {
       // prepend special entry for returning to base of mount
       p.unshift({part: 'mnt', upTo: '/'})
       return p
-    }
+    },
+
+    fileServerEnabled() {
+      return this.features.includes('file-server')
+    },
+
+    ...mapState({
+      features: 'features'
+    })
   },
 
   watch : {
@@ -119,6 +144,15 @@ export default {
         });
     },
 
+    // getExperimentFiles loads files available to copy from this experiment.
+    getExperimentFiles() {
+      this.$http.get(`experiments/${this.targetExp}/files`).then(resp => {
+        this.experimentFiles = resp.body.files === null ? [] : resp.body.files;
+      }, err => {
+        this.errorDialog(`Error getting experiment files: ${err.body}`)
+      });
+    },
+
     downloadFile(path) {
       this.$buefy.dialog.confirm({
         type: "is-info",
@@ -127,6 +161,27 @@ export default {
           window.open(`${process.env.BASE_URL}api/v1/experiments/${this.targetExp}/vms/${this.targetVm}/files/download?token=${this.$store.state.token}&path=${encodeURIComponent(path)}`, '_blank');
         }
       });
+    },
+
+    // copyExperimentFile copies the selected experiment file into the current VM path.
+    copyExperimentFile(path) {
+      if (!path) {
+        return;
+      }
+
+      this.currentCopyFileName = path.substring(path.lastIndexOf('/') + 1);
+      this.copyingExperimentFile = true;
+      this.$http.post(`experiments/${this.targetExp}/vms/${this.targetVm}/files/copy`, null, {
+          params: { 'path': this.currentPath, 'source': path }
+        }).then(_ => {
+          this.selectedExperimentFile = null;
+          this.copyingExperimentFile = false;
+          this.getFiles();
+        }, err => {
+          this.errorDialog(`Error copying experiment file: ${err.body}`)
+          this.selectedExperimentFile = null;
+          this.copyingExperimentFile = false;
+        });
     },
 
     handleUpload(file) {

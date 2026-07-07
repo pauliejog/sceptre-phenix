@@ -34,6 +34,7 @@ func newUICmd() *cobra.Command {
 			opts := []web.ServerOption{
 				web.ServeOnEndpoint(viper.GetString("ui.listen-endpoint")),
 				web.ServeBasePath(viper.GetString("ui.base-path")),
+				web.ServeFileServerEndpoint(viper.GetString("ui.file-server-endpoint")),
 				web.ServeWithJWTKey(viper.GetString("ui.jwt-signing-key")),
 				web.ServeWithJWTLifetime(viper.GetDuration("ui.jwt-lifetime")),
 				web.ServeWithUsers(viper.GetStringSlice("ui.users")),
@@ -84,6 +85,7 @@ func newUICmd() *cobra.Command {
 	uiCmd.Flags().
 		StringP("jwt-signing-key", "k", "", "Secret key used to sign JWT for authentication")
 	uiCmd.Flags().Duration("jwt-lifetime", defaultJWTLifetime, "Lifetime of JWT authentication tokens")
+	uiCmd.Flags().String("file-server-endpoint", "0", "port or host:port to serve experiment file uploads on; port-only binds 127.0.0.1")
 	uiCmd.Flags().
 		String("proxy-auth-header", "", "header containing username when using proxy authentication")
 	uiCmd.Flags().StringSlice("users", nil, "pipe-delimited list of initial users to add")
@@ -99,6 +101,7 @@ func newUICmd() *cobra.Command {
 	_ = viper.BindPFlag("ui.base-path", uiCmd.Flags().Lookup("base-path"))
 	_ = viper.BindPFlag("ui.jwt-signing-key", uiCmd.Flags().Lookup("jwt-signing-key"))
 	_ = viper.BindPFlag("ui.jwt-lifetime", uiCmd.Flags().Lookup("jwt-lifetime"))
+	_ = viper.BindPFlag("ui.file-server-endpoint", uiCmd.Flags().Lookup("file-server-endpoint"))
 	_ = viper.BindPFlag("ui.proxy-auth-header", uiCmd.Flags().Lookup("proxy-auth-header"))
 	_ = viper.BindPFlag("ui.users", uiCmd.Flags().Lookup("users"))
 	_ = viper.BindPFlag("ui.tls-key", uiCmd.Flags().Lookup("tls-key"))
@@ -112,6 +115,7 @@ func newUICmd() *cobra.Command {
 	_ = viper.BindEnv("ui.base-path")
 	_ = viper.BindEnv("ui.jwt-signing-key")
 	_ = viper.BindEnv("ui.jwt-lifetime")
+	_ = viper.BindEnv("ui.file-server-endpoint")
 	_ = viper.BindEnv("ui.proxy-auth-header")
 	_ = viper.BindEnv("ui.users")
 	_ = viper.BindEnv("ui.tls-key")

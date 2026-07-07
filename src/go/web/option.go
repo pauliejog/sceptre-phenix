@@ -29,9 +29,10 @@ type serverOptions struct {
 	logMiddleware string
 	minimegaLogs  string
 
-	unbundled       bool
-	basePath        string
-	minimegaConsole bool
+	unbundled          bool
+	basePath           string
+	fileServerEndpoint string
+	minimegaConsole    bool
 
 	jwtKey      string
 	jwtLifetime time.Duration
@@ -143,6 +144,13 @@ func ServeUnbundled() ServerOption {
 func ServeBasePath(p string) ServerOption {
 	return func(o *serverOptions) {
 		o.basePath = p
+	}
+}
+
+// ServeFileServerEndpoint sets the optional experiment file upload server endpoint.
+func ServeFileServerEndpoint(e string) ServerOption {
+	return func(o *serverOptions) {
+		o.fileServerEndpoint = e
 	}
 }
 
