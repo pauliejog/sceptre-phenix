@@ -72,6 +72,52 @@
     },
 
     methods: {
+      resetPipelineNodes ( nodes ) {
+        if (!Array.isArray(nodes)) {
+          return [];
+        }
+
+        return nodes.map(node => {
+          let status = node.status;
+
+          if (status && status !== 'start' && status !== 'end') {
+            status = 'unknown';
+          }
+
+          return { ...node, status };
+        });
+      },
+
+      clearRunState ( runID = null ) {
+        if (!Array.isArray(this.runs)) {
+          return;
+        }
+
+        // Reset pipeline by clearing cached run artifacts
+        if (runID === null) {
+          this.runs = this.runs.map(run => ({
+            ...run,
+            running: false,
+            loop: 0,
+            nodes: this.resetPipelineNodes(run.nodes)
+          }));
+
+          return;
+        }
+
+        let run = this.runs[runID];
+
+        if (!run) {
+          return;
+        }
+
+        run.running = false;
+        run.loop    = 0;
+        run.nodes   = this.resetPipelineNodes(run.nodes);
+
+        this.$set(this.runs, runID, run);
+      },
+
       scorchControl ( exp, runID ) {
         let run = this.runs[runID];
 
@@ -282,6 +328,8 @@
 
             switch ( msg.resource.action ) {
               case 'start': {
+                this.clearRunState(runID);
+
                 let run     = this.runs[runID];
                 run.running = true;
 
@@ -312,7 +360,7 @@
                 let loopID = parseInt(tokens[2]);
                 let run    = this.runs[runID];
 
-                if (run.loop == loopID) {
+                if (run && run.loop == loopID) {
                   run.nodes = msg.result.pipeline;
                   this.$set(this.runs, runID, run);
                 }
@@ -330,6 +378,11 @@
             }
 
             switch ( msg.resource.action ) {
+              case 'start': {
+                this.clearRunState();
+                break;
+              }
+
               case 'delete': {
                 this.$router.replace({name: 'scorch'});
               
@@ -343,6 +396,14 @@
               }
             }
           }
+        }
+      }
+    },
+
+    watch: {
+      '$route.params.id' (newID, oldID) {
+        if (newID && newID !== oldID) {
+          this.runsView(newID);
         }
       }
     },
