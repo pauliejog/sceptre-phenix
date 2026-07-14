@@ -19,6 +19,7 @@ import (
 	"phenix/web/broker"
 	bt "phenix/web/broker/brokertypes"
 	"phenix/web/cache"
+	"phenix/web/scorch"
 	"phenix/web/util"
 	"phenix/web/weberror"
 )
@@ -45,6 +46,9 @@ func startExperiment(name string) ([]byte, error) {
 	}
 
 	defer cache.UnlockExperiment(name)
+
+	// Clear any cached SCORCH pipelines from a previous experiment run
+	scorch.DeletePipeline(name, -1, -1, false)
 
 	broker.Broadcast(
 		bt.NewRequestPolicy("experiments/start", "update", name),
