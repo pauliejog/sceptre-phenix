@@ -151,7 +151,12 @@
                   let name    = pipelines[i].name;
                   let nodes   = pipelines[i].pipeline;
 
-                  this.runs.push( { name, running, nodes, loop: 0 } );
+                  this.runs.push( {
+                    name,
+                    running,
+                    nodes: running ? nodes : this.resetPipelineNodes(nodes),
+                    loop: 0
+                  } );
                 }
               }, err => {
                 this.errorNotification(err);
@@ -374,7 +379,9 @@
 
           case 'experiment':
           case `experiment/${this.exp && this.exp.name}`: {
-            if (!this.exp || this.exp.name !== msg.resource.name) {
+            let name = msg.resource.name || '';
+
+            if (!this.exp || (name !== this.exp.name && !name.startsWith(this.exp.name + '/'))) {
               return;
             }
 
