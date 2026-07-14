@@ -79,12 +79,17 @@
 
         return nodes.map(node => {
           let status = node.status;
+          let next   = node.next;
 
           if (status && status !== 'start' && status !== 'end') {
             status = 'unknown';
           }
 
-          return { ...node, status };
+          if (Array.isArray(next)) {
+            next = next.map(edge => ({ ...edge, weight: 0 }));
+          }
+
+          return { ...node, status, next };
         });
       },
 
@@ -154,7 +159,7 @@
                   this.runs.push( {
                     name,
                     running,
-                    nodes: running ? nodes : this.resetPipelineNodes(nodes),
+                    nodes,
                     loop: 0
                   } );
                 }
@@ -388,12 +393,6 @@
             switch ( msg.resource.action ) {
               case 'starting':
               case 'start': {
-                this.clearRunState();
-                break;
-              }
-
-              case 'stop':
-              case 'stopping': {
                 this.clearRunState();
                 break;
               }
