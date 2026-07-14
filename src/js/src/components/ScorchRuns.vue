@@ -372,13 +372,21 @@
             break;
           }
 
-          case 'experiment': {
+          case 'experiment':
+          case `experiment/${this.exp && this.exp.name}`: {
             if (!this.exp || this.exp.name !== msg.resource.name) {
               return;
             }
 
             switch ( msg.resource.action ) {
+              case 'starting':
               case 'start': {
+                this.clearRunState();
+                break;
+              }
+
+              case 'stop':
+              case 'stopping': {
                 this.clearRunState();
                 break;
               }
