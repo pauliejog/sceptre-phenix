@@ -118,6 +118,10 @@
       },
 
       componentDetail ( comp ) {
+        if ( !this.exp || comp.exp !== this.exp.name ) {
+          return;
+        }
+
         switch ( comp.name ) {
           case 'configure': case 'start': case 'stop': case 'cleanup': {
             break;
@@ -139,12 +143,9 @@
           }
 
           default: {
-            if ( comp.status === 'unknown' ) {
-              this.$buefy.toast.open({
-                message: `There is no output available for the ${comp.name} node in the ${comp.stage} stage`,
-                type:    'is-info',
-                duration: 4000
-              });
+            if ( comp.status === 'unknown' ) { // skip stale node data
+              this.exitOutput();
+              this.resetTerminal(true);
               return;
             }
             let endpoint = `experiments/${comp.exp}/scorch/components/${comp.run}/${comp.loop}/${comp.stage}/${comp.name}`;
@@ -152,13 +153,24 @@
             this.$http.get(
               endpoint, { 'headers': { 'Accept': 'application/json' } }
             ).then(
-              resp => {
+              resp => { 
                 if ( resp.body.output ) {
+                  if ( this.output.socket != null ) {
+                    this.output.socket.close();
+                    this.output.socket = null;
+                  }
+
                   this.output.title = `${comp.exp} - Node: ${comp.name} - Run: ${comp.run} - Stage: ${comp.stage}`;
                   this.output.msg   = resp.body.output;
                   this.output.modal = true;
                 } else if ( resp.body.stream ) {
+                  if ( this.output.socket != null ) {
+                    this.output.socket.close();
+                    this.output.socket = null;
+                  }
+
                   this.output.title = `${comp.exp} - Node: ${comp.name} - Run: ${comp.run} - Stage: ${comp.stage}`;
+                  this.output.msg   = '';
                   this.getOutputStream( resp.body.stream );
                   this.output.modal = true;
                 } else if ( resp.body.terminal ) {
@@ -332,6 +344,15 @@
             }
 
             switch ( msg.resource.action ) {
+              case 'start':
+              case 'stop': {
+                this.exitOutput();
+                this.resetTerminal(true);
+                this.runsView(this.exp.name);
+
+                break;
+              }
+
               case 'delete': {
                 this.$router.replace({name: 'scorch'});
               
