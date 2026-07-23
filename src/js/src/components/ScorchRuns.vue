@@ -139,7 +139,7 @@
           }
 
           default: {
-            if ( comp.exp !== this.exp ) {
+            if ( comp.status === 'unknown' ) {
               return;
             }
             let endpoint = `experiments/${comp.exp}/scorch/components/${comp.run}/${comp.loop}/${comp.stage}/${comp.name}`;
