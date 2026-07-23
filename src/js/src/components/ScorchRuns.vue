@@ -140,6 +140,11 @@
 
           default: {
             if ( comp.status === 'unknown' ) {
+              this.$buefy.toast.open({
+                message: `There is no output available for the ${comp.name} node in the ${comp.stage} stage`,
+                type:    'is-info',
+                duration: 4000
+              });
               return;
             }
             let endpoint = `experiments/${comp.exp}/scorch/components/${comp.run}/${comp.loop}/${comp.stage}/${comp.name}`;
@@ -164,13 +169,7 @@
                   this.terminal.exp   = t.exp;
                   this.terminal.ro    = t.readOnly;
                   this.terminal.modal = true;
-                } else {
-                  this.$buefy.toast.open({
-                    message: `There is no output available for the ${comp.name} node in the ${comp.stage} stage`,
-                    type:    'is-info',
-                    duration: 4000
-                  });
-                }
+                } 
               }, err => {
                 this.errorNotification(err);
               }
