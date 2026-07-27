@@ -143,7 +143,7 @@
           }
 
           default: {
-            if ( comp.status === 'unknown' ) { // skip stale node data
+            if ( comp.status === 'unknown' ) { 
               this.exitOutput();
               this.resetTerminal(true);
               return;
