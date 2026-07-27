@@ -547,6 +547,21 @@ func GetPipelines(w http.ResponseWriter, r *http.Request) error {
 		return weberror.NewWebError(err, "unable to get experiment %s from store", name)
 	}
 
+	var running bool
+
+	// first make sure Scorch app is running
+	for app, status := range exp.Status.AppRunning() {
+		if app == "scorch" && status {
+			running = true
+
+			break
+		}
+	}
+
+	if !running {
+		DeletePipeline(name, -1, -1, false)
+	}
+
 	md, err := scorchmd.DecodeMetadata(exp)
 	if err != nil {
 		err := weberror.NewWebError(err, "unable to decode scorch metadata for experiment %s", name)
@@ -568,17 +583,6 @@ func GetPipelines(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		pipelines = append(pipelines, pipeline)
-	}
-
-	var running bool
-
-	// first make sure Scorch app is running
-	for app, status := range exp.Status.AppRunning() {
-		if app == "scorch" && status {
-			running = true
-
-			break
-		}
 	}
 
 	runID := -1
