@@ -155,22 +155,11 @@
             ).then(
               resp => { 
                 if ( resp.body.output ) {
-                  if ( this.output.socket != null ) {
-                    this.output.socket.close();
-                    this.output.socket = null;
-                  }
-
                   this.output.title = `${comp.exp} - Node: ${comp.name} - Run: ${comp.run} - Stage: ${comp.stage}`;
                   this.output.msg   = resp.body.output;
                   this.output.modal = true;
                 } else if ( resp.body.stream ) {
-                  if ( this.output.socket != null ) {
-                    this.output.socket.close();
-                    this.output.socket = null;
-                  }
-
                   this.output.title = `${comp.exp} - Node: ${comp.name} - Run: ${comp.run} - Stage: ${comp.stage}`;
-                  this.output.msg   = '';
                   this.getOutputStream( resp.body.stream );
                   this.output.modal = true;
                 } else if ( resp.body.terminal ) {
@@ -181,7 +170,13 @@
                   this.terminal.exp   = t.exp;
                   this.terminal.ro    = t.readOnly;
                   this.terminal.modal = true;
-                } 
+                } else {
+                  this.$buefy.toast.open({
+                    message: `There is no output available for the ${comp.name} node in the ${comp.stage} stage`,
+                    type:    'is-info',
+                    duration: 4000
+                  });
+                }
               }, err => {
                 this.errorNotification(err);
               }
