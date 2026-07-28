@@ -22,6 +22,8 @@ import (
 	"phenix/app"
 	"phenix/util/plog"
 	"phenix/util/pubsub"
+	"phenix/web/broker"
+	bt "phenix/web/broker/brokertypes"
 	"phenix/web/middleware"
 	"phenix/web/rbac"
 	"phenix/web/util"
@@ -29,6 +31,14 @@ import (
 )
 
 func init() { //nolint:gochecknoinits // hook registration
+	experiment.RegisterHook("start", func(stage, name string) {
+		broker.Broadcast(
+			bt.NewRequestPolicy("experiments/start", "update", name),
+			bt.NewResource("experiment", name, "start"),
+			nil,
+		)
+	})
+
 	experiment.RegisterHook("stop", func(stage, name string) {
 		for _, cancel := range scorchexe.GetExperimentCancelers(name) {
 			cancel()
@@ -547,21 +557,6 @@ func GetPipelines(w http.ResponseWriter, r *http.Request) error {
 		return weberror.NewWebError(err, "unable to get experiment %s from store", name)
 	}
 
-	var running bool
-
-	// first make sure Scorch app is running
-	for app, status := range exp.Status.AppRunning() {
-		if app == "scorch" && status {
-			running = true
-
-			break
-		}
-	}
-
-	if !running {
-		DeletePipeline(name, -1, -1, false)
-	}
-
 	md, err := scorchmd.DecodeMetadata(exp)
 	if err != nil {
 		err := weberror.NewWebError(err, "unable to decode scorch metadata for experiment %s", name)
@@ -583,6 +578,17 @@ func GetPipelines(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		pipelines = append(pipelines, pipeline)
+	}
+
+	var running bool
+
+	// first make sure Scorch app is running
+	for app, status := range exp.Status.AppRunning() {
+		if app == "scorch" && status {
+			running = true
+
+			break
+		}
 	}
 
 	runID := -1
