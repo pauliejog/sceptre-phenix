@@ -36,6 +36,18 @@ var (
 	commonMu  sync.Mutex                              //nolint:gochecknoglobals // global lock
 )
 
+func init() { //nolint:gochecknoinits // hook registration
+	// Broadcast experiment/start to UI clients when an experiment starts from
+	// any source (web or CLI), so the UI resets Scorch state and component info.
+	experiment.RegisterHook("start", func(stage, name string) {
+		broker.Broadcast(
+			bt.NewRequestPolicy("experiments/start", "update", name),
+			bt.NewResource("experiment", name, "start"),
+			nil,
+		)
+	})
+}
+
 //nolint:funlen // complex logic
 func startExperiment(name string) ([]byte, error) {
 	err := cache.LockExperimentForStarting(name)

@@ -22,8 +22,6 @@ import (
 	"phenix/app"
 	"phenix/util/plog"
 	"phenix/util/pubsub"
-	"phenix/web/broker"
-	bt "phenix/web/broker/brokertypes"
 	"phenix/web/middleware"
 	"phenix/web/rbac"
 	"phenix/web/util"
@@ -31,14 +29,6 @@ import (
 )
 
 func init() { //nolint:gochecknoinits // hook registration
-	experiment.RegisterHook("start", func(stage, name string) {
-		broker.Broadcast(
-			bt.NewRequestPolicy("experiments/start", "update", name),
-			bt.NewResource("experiment", name, "start"),
-			nil,
-		)
-	})
-
 	experiment.RegisterHook("stop", func(stage, name string) {
 		for _, cancel := range scorchexe.GetExperimentCancelers(name) {
 			cancel()
